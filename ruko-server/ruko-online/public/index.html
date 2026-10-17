@@ -73,7 +73,6 @@ let ME=cur();
 
 async function hash(s){try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('ruko:'+s));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}catch(e){return btoa(s)}}
 
-// Initialize default Ruko admin account
 async function initRukoAccount(){
   const U=users();
   if(!U['ruko']){
@@ -98,7 +97,6 @@ const saveUser=u=>{
 
 const sales=h=>(h.base||0)+(ls.get('ruko_sales',{})[h.id]||0);
 
-/* ---------- 3D helpers ---------- */
 const GEO={cylinder:()=>new THREE.CylinderGeometry(.5,.5,1,20),cone:()=>new THREE.ConeGeometry(.5,1,20),dome:()=>new THREE.SphereGeometry(.5,20,12,0,6.3,0,1.5708),sphere:()=>new THREE.SphereGeometry(.5,20,14),box:()=>new THREE.BoxGeometry(1,1,1),torus:()=>new THREE.TorusGeometry(.4,.1,8,24).rotateX(1.5708)};
 function parts(h){if(h.parts)return h.parts;const w=+h.w||1,H=+h.h||.5,c=h.color,P=(t,sx,sy,sz,y)=>({t,c,f:'matte',sx,sy,sz,x:0,y,z:0,r:0,q:0}),o=[];
  if(h.type=='cylinder')o.push(P('cylinder',.7*w,H,.7*w,H/2));if(h.type=='cone')o.push(P('cone',.8*w,H,.8*w,H/2));if(h.type=='dome')o.push(P('dome',.84*w,2*H,.84*w,0));if(h.type=='box')o.push(P('box',.7*w,H,.7*w,H/2));if(h.type=='ring')o.push(P('torus',.75*w,1,.75*w,.4));
@@ -120,7 +118,6 @@ function makePlayer(hat,av){av=Object.assign({skin:'#f5cd30',shirt:'#2f6fed',pan
  g.userData.l={la:limb(-.88,sk,2.4),ra:limb(.88,sk,2.4),ll:limb(-.3,pm,1.2),rl:limb(.3,pm,1.2)};
  if(hat){const m=hatMesh(hat);m.position.y=3.1;g.add(m)}return g}
 
-/* ---------- game engine ---------- */
 const TK={};
 document.querySelectorAll('#pad button').forEach(b=>{const k=b.dataset.k;b.onpointerdown=e=>{e.preventDefault();TK[k]=1};['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,()=>TK[k]=0))});
 function play(g){
@@ -155,7 +152,6 @@ function play(g){
  $('#ex').onclick=()=>{cancelAnimationFrame(raf);removeEventListener('keydown',kd);removeEventListener('keyup',ku);R.dispose();R.domElement.remove();W.style.display='none';
   if(got&&me){me.coins=(me.coins||0)+got;saveUser(me)}render()}}
 
-/* ---------- Views & Logic ---------- */
 const DEV=()=>document.documentElement.dataset.dev;
 function detect(){document.documentElement.dataset.dev=((matchMedia('(pointer:coarse)').matches&&matchMedia('(hover:none)').matches)||/Android|iPhone|iPod|Mobile/i.test(navigator.userAgent)||innerWidth<700)?'mobile':'desktop'}
 detect();addEventListener('resize',detect);
@@ -259,10 +255,9 @@ function hatEd(me){
 function gameEd(me){
  const F=(id,l,t,v,x='')=>`<label>${l}</label><input id="${id}" type="${t}" value="${v}" ${x}>`;
  $('#ed').innerHTML=`<div class="card" style="max-width:520px">${F('cn','Name','text','My Game','maxlength=24')}${F('cd','Description','text','A game I made.','maxlength=80')}<label>Type</label><select id="cm"><option value="obby">Obby (climb to the top)</option><option value="coins">Coin collector</option><option value="roam">Free roam</option></select>${F('cs','Sky','color','#8fd3ff')}${F('cg','Ground','color','#5bd16a')}${F('cz','Platforms (5–40)','number',16)}${F('cx','Level seed','number',Math.floor(Math.random()*999))}${F('sp','Walk speed (4–14)','number',7)}${F('jp','Jump power (6–16)','number',9)}${F('gr','Gravity (10–40)','number',22)}${F('cn2','Coins count (5–60)','number',25)}<label><input id="cp" type="checkbox" checked> Checkpoints every 5 platforms</label><div style="display:flex;gap:8px;margin-top:10px"><button id="tst" style="flex:1">Test play</button><button class="pri" id="pub" style="flex:1">Publish</button></div></div>`;
- const cl=(v,a,b,d)=>Math.max(a,Math.min(b,+v||d)),spec=()=>({id:'c'+Date.now(),name:$('#cn').value.trim()\vert{}\vert{}'Untitled',desc:$('#cd').value.trim(),creator:me.name,mode:$('#cm').value,sky:$('#cs').value,ground:$('#cg').value,size:cl($('#cz').value,5,40,16),seed:+$('#cx').value\vert{}\vert{}1,spd:cl($('#sp').value,4,14,7),jmp:cl($('#jp').value,6,16,9),grav:cl($('#gr').value,10,40,22),coinN:cl($('#cn2').value,5,60,25),cps:$('#cp').checked});
+ const cl=(v,a,b,d)=>Math.max(a,Math.min(b,+v||d)),spec=()=>({id:'c'+Date.now(),name:$('#cn').value.trim()\vert{}\vert{}'Untitled',desc:$('#cd').value.trim(),creator:me.name,mode:$('#cm').value,sky:$('#cs').value,ground:$('#cg').value,size:cl($('#cz').value,5,40,16),seed:+$('#cx').value\vert{}\vert{}1,spd:cl($('#sp').value,4,14,7),jmp:cl($('#jp').value,6,16,9),grav:cl($('#gr').value,10,40,22),coinN:cl($('#cn2').value,5,60,25),cps:$('#cp'].checked});
  $('#tst').onclick=()=>play(spec());$('#pub').onclick=()=>{const custom=ls.get('ruko_games',[]);ls.set('ruko_games',[...custom,spec()]);location.hash='#/'}}
 
-/* ---------- Special Admin Management Dashboard ---------- */
 function adminView(){
  app.innerHTML=`
   <h2>Admin Dashboard (Log in: Ruko)</h2>
@@ -300,11 +295,8 @@ function adminView(){
      b.onclick=()=>{
        const id = b.dataset.sv;
        const newPrice = +$(`#pr-${id}`).value;
-       
-       // Update default hat or custom hat
        const defItem = DEF_HATS.find(x=>x.id==id);
        if(defItem) defItem.price = newPrice;
-
        const customHats = ls.get('ruko_hats',[]);
        const cItem = customHats.find(x=>x.id==id);
        if(cItem) {
