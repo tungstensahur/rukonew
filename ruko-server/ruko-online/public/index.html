@@ -275,8 +275,18 @@ function adminView(){
   <div id="adm-sec"></div>
  `;
 
- $('#adm-cat').onclick=()=>{ $('#adm-cat'].className='on'; $('#adm-gm'].className=''; drawAdminCatalog(); };
- $('#adm-gm').onclick=()=>{ $('#adm-gm'].className='on'; $('#adm-cat'].className=''; drawAdminGames(); };
+function adminView(){
+ app.innerHTML=`
+  <h2>Admin Dashboard (Log in: Ruko)</h2>
+  <div class="tabs">
+    <button id="adm-cat" class="on">Catalog Management</button>
+    <button id="adm-gm">Game Reviews</button>
+  </div>
+  <div id="adm-sec"></div>
+ `;
+
+ $('#adm-cat').onclick=()=>{ $('#adm-cat').className='on'; $('#adm-gm').className=''; drawAdminCatalog(); };
+ $('#adm-gm').onclick=()=>{ $('#adm-gm').className='on'; $('#adm-cat').className=''; drawAdminGames(); };
 
  const drawAdminCatalog=()=>{
    const allHats = hats();
@@ -301,7 +311,7 @@ function adminView(){
    $('#adm-sec').querySelectorAll('[data-sv]').forEach(b=>{
      b.onclick=()=>{
        const id = b.dataset.sv;
-       const newPrice = +$(`#pr-${id}`).value;
+       const newPrice = +document.getElementById('pr-'+id).value;
        const defItem = DEF_HATS.find(x=>x.id==id);
        if(defItem) defItem.price = newPrice;
        const cItem = SH.find(x=>x.id==id);
