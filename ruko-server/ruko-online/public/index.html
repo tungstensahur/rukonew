@@ -48,12 +48,11 @@ const $=s=>document.querySelector(s),app=$('#app');
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ls={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 const DEF_HATS=[
-{id:'r1',name:'Ruko Cap',creator:'Ruko',price:50,type:'dome',color:'#e5484d',h:.4,w:1,brim:1,base:1240},
-{id:'r2',name:'Top Hat',creator:'Ruko',price:120,type:'cylinder',color:'#1b1b22',h:.65,w:1,brim:1,base:860},
-{id:'r3',name:'Wizard Hat',creator:'Ruko',price:200,type:'cone',color:'#6d4aff',h:1,w:1.1,brim:1,base:2130},
-{id:'r4',name:'Golden Halo',creator:'Ruko',price:400,type:'ring',color:'#ffc800',h:.3,w:1,brim:0,base:540},
-{id:'r5',name:'Party Cone',creator:'Ruko',price:30,type:'cone',color:'#ff4b8b',h:.6,w:.7,brim:0,base:980},
-{id:'r6',name:'Crate Head',creator:'Ruko',price:80,type:'box',color:'#a8743a',h:.55,w:1.1,brim:0,base:310}];
+{id:'r1',name:'Ruko Cap',creator:'Ruko',price:500,type:'dome',color:'#e5484d',h:.4,w:1,brim:1,base:1240},
+{id:'r2',name:'Top Hat',creator:'Ruko',price:750,type:'cylinder',color:'#1b1b22',h:.65,w:1,brim:1,base:860},
+{id:'r3',name:'Wizard Hat',creator:'Ruko',price:850,type:'cone',color:'#6d4aff',h:1,w:1.1,brim:1,base:2130},
+{id:'r4',name:'Golden Halo',creator:'Ruko',price:500,type:'ring',color:'#ffc800',h:.3,w:1,brim:0,base:540},
+{id:'r5',name:'Party Cone',creator:'Ruko',price:200,type:'cone',color:'#ff4b8b',h:.6,w:.7,brim:0,base:980}];
 const DEF_GAMES=[
 {id:'g1',name:'Sky Steps',creator:'Ruko',desc:'Jump up the floating obby to the golden platform.',mode:'obby',sky:'#8fd3ff',ground:'#5bd16a',seed:7,size:18},
 {id:'g2',name:'Coin Rush',creator:'Ruko',desc:'Grab every coin in the park.',mode:'coins',sky:'#ffd9a0',ground:'#7bc96f',seed:3,size:20},
