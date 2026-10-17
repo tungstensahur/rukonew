@@ -3,6 +3,6 @@ services:
     name: rukonew
     runtime: node
     plan: free
-    rootDir: ruko-server
+    rootDir: ruko-online
     buildCommand: npm install
     startCommand: node server.js
