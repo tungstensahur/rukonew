@@ -166,7 +166,7 @@ function authView(mode){
  app.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>authView(b.dataset.m));
  $('#go').onclick=async()=>{const n=$('#u').value.trim(),p=$('#p').value,k=n.toLowerCase(),U=users(),E=t=>$('#err').textContent=t;
   if(mode=='up'){if(!/^\w{3,16}$/.test(n))return E('Username: 3–16 letters, numbers or underscores.');if(p.length<4)return E('Password needs 4+ characters.');if(U[k])return E('Username taken.');
-   U[k]={name:n,h:await hash(p),coins:500,owned:['r1'],worn:'r1',av:{skin:'#f5cd30',shirt:'#2f6fed',pants:'#4a9c3a',face:0}};ls.set('ruko_users',U)}
+   U[k]={name:n,h:await hash(p),coins:500,owned:['r1'],worn:'r1',av:{skin:'#f5cd30',shirt:'#5b4bff',pants:'#1b1b22',face:0}};ls.set('ruko_users',U)}
   else if(!U[k]||U[k].h!==await hash(p))return E('Wrong username or password.');
   ls.set('ruko_session',k);ME=cur();location.hash='#/';render()}}
 
@@ -260,9 +260,10 @@ function hatEd(me){HE=HE||{name:'My Hat',price:100,parts:[{t:'cylinder',c:'#5b4b
  $('#rx').onchange=e=>{const h=hats().find(x=>x.id==e.target.value);if(h){HE.parts=JSON.parse(JSON.stringify(parts(h)));HE.name=h.name+' Remix';HE.sel=0;draw()}};
  $('#pub').onclick=()=>{const h={id:'h'+Date.now(),name:HE.name.trim()||'Untitled',creator:me.name,price:Math.max(0,Math.min(1000,HE.price||0)),parts:HE.parts,base:0};SH.push(h);ls.set('ruko_hats',SH);HE=null;location.hash='#/hat/'+h.id}};draw()}
 
-function gameEd(me){const F=(id,l,t,v,x='')=>`<label>${l}</label><input id="${id}" type="${t}" value="${v}" ${x}>`;
- $('#ed').innerHTML=`<div class="card" style="max-width:520px">${F('cn','Name','text','My Game','maxlength=24')}${F('cd','Description','text','A game I made.','maxlength=80')}<label>Type</label><select id="cm"><option value="obby">Obby (climb to the top)</option><option value="coins">Coin collector</option><option value="roam">Free roam</option></select>${F('cs','Sky','color','#8fd3ff')}${F('cg','Ground','color','#5bd16a')}${F('cz','Platforms (5–40)','number',16)}${F('cx','Level seed','number',Math.floor(Math.random()*999))}${F('sp','Walk speed (4–14)','number',7)}${F('jp','Jump power (6–16)','number',9)}${F('gr','Gravity (10–40)','number',22)}${F('cn2','Coins, coin type (5–60)','number',25)}<label><input id="cp" type="checkbox" checked> Checkpoints every 5 platforms</label><div style="display:flex;gap:8px;margin-top:10px"><button id="tst" style="flex:1">Test play</button><button class="pri" id="pub" style="flex:1">Publish</button></div></div>`;
- const cl=(v,a,b,d)=>Math.max(a,Math.min(b,+v||d)),spec=()=>({id:'c'+Date.now(),name:$('#cn').value.trim()||'Untitled',desc:$('#cd').value.trim(),creator:me.name,mode:$('#cm').value,sky:$('#cs').value,ground:$('#cg').value,size:cl($('#cz').value,5,40,16),seed:+$('#cx').value||1,spd:cl($('#sp').value,4,14,7),jmp:cl($('#jp').value,6,16,9),grav:cl($('#gr').value,10,40,22),coinN:cl($('#cn2').value,5,60,25),cps:$('#cp').checked});
+function gameEd(me){
+ const F=(id,l,t,v,x='')=>`<label>${l}</label><input id="${id}" type="${t}" value="${v}" ${x}>`;
+ $('#ed').innerHTML=`<div class="card" style="max-width:520px">${F('cn','Name','text','My Game','maxlength=24')}${F('cd','Description','text','A game I made.','maxlength=80')}<label>Type</label><select id="cm"><option value="obby">Obby (climb to the top)</option><option value="coins">Coin collector</option><option value="roam">Free roam</option></select>${F('cs','Sky','color','#8fd3ff')}${F('cg','Ground','color','#5bd16a')}${F('cz','Platforms (5–40)','number',16)}${F('cx','Level seed','number',Math.floor(Math.random()*999))}${F('sp','Walk speed (4–14)','number',7)}${F('jp','Jump power (6–16)','number',9)}${F('gr','Gravity (10–40)','number',22)}${F('cn2','Coins count (5–60)','number',25)}<label><input id="cp" type="checkbox" checked> Checkpoints every 5 platforms</label><div style="display:flex;gap:8px;margin-top:10px"><button id="tst" style="flex:1">Test play</button><button class="pri" id="pub" style="flex:1">Publish</button></div></div>`;
+ const cl=(v,a,b,d)=>Math.max(a,Math.min(b,+v||d)),spec=()=>({id:'c'+Date.now(),name:$('#cn').value.trim()\vert{}\vert{}'Untitled',desc:$('#cd').value.trim(),creator:me.name,mode:$('#cm').value,sky:$('#cs').value,ground:$('#cg').value,size:cl($('#cz').value,5,40,16),seed:+$('#cx').value\vert{}\vert{}1,spd:cl($('#sp').value,4,14,7),jmp:cl($('#jp').value,6,16,9),grav:cl($('#gr').value,10,40,22),coinN:cl($('#cn2').value,5,60,25),cps:$('#cp'].checked});
  $('#tst').onclick=()=>play(spec());$('#pub').onclick=()=>{SG.push(spec());ls.set('ruko_games',SG);location.hash='#/'}}
 
 function adminView(){
@@ -275,18 +276,8 @@ function adminView(){
   <div id="adm-sec"></div>
  `;
 
-function adminView(){
- app.innerHTML=`
-  <h2>Admin Dashboard (Log in: Ruko)</h2>
-  <div class="tabs">
-    <button id="adm-cat" class="on">Catalog Management</button>
-    <button id="adm-gm">Game Reviews</button>
-  </div>
-  <div id="adm-sec"></div>
- `;
-
- $('#adm-cat').onclick=()=>{ $('#adm-cat').className='on'; $('#adm-gm').className=''; drawAdminCatalog(); };
- $('#adm-gm').onclick=()=>{ $('#adm-gm').className='on'; $('#adm-cat').className=''; drawAdminGames(); };
+ $('#adm-cat').onclick=()=>{ $('#adm-cat'].className='on'; $('#adm-gm'].className=''; drawAdminCatalog(); };
+ $('#adm-gm').onclick=()=>{ $('#adm-gm'].className='on'; $('#adm-cat'].className=''; drawAdminGames(); };
 
  const drawAdminCatalog=()=>{
    const allHats = hats();
