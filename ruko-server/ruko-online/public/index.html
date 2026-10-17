@@ -1,0 +1,251 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Ruko</title>
+<style>
+:root{--bg:#f4f5fb;--card:#fff;--tx:#14162b;--mut:#6b6f8a;--ac:#5b4bff;--bd:#dfe1ef;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1020;--card:#1a1c33;--tx:#eef0ff;--mut:#9a9eca;--bd:#2c2f52;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1020;--card:#1a1c33;--tx:#eef0ff;--mut:#9a9eca;--bd:#2c2f52;color-scheme:dark}
+html,body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+*{box-sizing:border-box}
+#top{display:none;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;background:var(--card);border-bottom:1px solid var(--bd);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.logo{font-weight:900;font-size:22px;color:var(--ac);letter-spacing:1px;margin-right:6px}
+nav{display:flex;gap:6px;flex:1}
+button,select,input{font:inherit}
+button{border:1px solid var(--bd);background:var(--card);color:var(--tx);padding:8px 12px;border-radius:10px;cursor:pointer}
+button.on,button.pri{background:var(--ac);color:#fff;border-color:var(--ac)}
+button:disabled{opacity:.5}
+input,select{width:100%;padding:10px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);margin:4px 0 10px}
+input[type=color]{height:42px;padding:2px}input[type=checkbox]{width:auto}
+main{max-width:980px;margin:0 auto;padding:16px}
+h2{margin:6px 0 14px}.mut{color:var(--mut)}.err{color:#e5484d;min-height:20px;font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px}
+.tile{cursor:pointer}.tile img{width:100%;border-radius:10px;background:var(--bg)}
+.gcard{height:90px;border-radius:10px;margin-bottom:8px}
+.auth{max-width:380px;margin:12vh auto 0}.auth h1{margin:0;color:var(--ac);font-size:38px;letter-spacing:2px}
+.tabs{display:flex;gap:6px;margin:14px 0}.tabs button{flex:1}
+.hat{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:600px){.hat{grid-template-columns:1fr}}
+.hat img{width:100%;border-radius:14px;background:var(--bg)}
+.stat{display:flex;gap:18px;margin:10px 0}.stat b{display:block;font-size:22px}
+#game{display:none;position:fixed;inset:0;z-index:50;background:#000}
+#game canvas{display:block;touch-action:none}
+#hud{position:absolute;top:env(safe-area-inset-top,0px);left:0;right:0;padding:10px;display:flex;justify-content:space-between;color:#fff;font-weight:700;text-shadow:0 1px 3px #000;pointer-events:none}
+#hud button{pointer-events:auto}
+#gmsg{position:absolute;top:70px;width:100%;text-align:center;color:#fff;font-size:22px;font-weight:800;text-shadow:0 2px 4px #000}
+#pad{position:absolute;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:12px;right:12px;display:none;justify-content:space-between;align-items:flex-end;touch-action:none}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}.chips button{padding:6px 10px}
+[data-dev=mobile] #pad{display:flex}
+[data-dev=desktop] main{max-width:1180px}[data-dev=desktop] .grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}[data-dev=desktop] #hud{font-size:18px}
+[data-dev=mobile] main{padding-bottom:96px}[data-dev=mobile] #top nav{position:fixed;left:0;right:0;bottom:0;padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));background:var(--card);border-top:1px solid var(--bd);z-index:6}[data-dev=mobile] #top nav button{flex:1}
+#pad button{width:56px;height:56px;margin:2px;background:#fff6;color:#fff;border:0;font-size:20px;user-select:none}
+#pad .row{display:flex;justify-content:center}#jb{width:84px!important;height:84px!important;border-radius:50%!important}
+</style></head><body>
+<header id="top"><span class="logo">RUKO</span><nav><button data-r="">Games</button><button data-r="catalog">Catalog</button><button data-r="servers">Servers</button><button data-r="avatar">Avatar</button><button data-r="create">Create</button></nav><span id="coins"></span><button id="out">Log out</button></header>
+<main id="app"></main>
+<div id="game"><div id="hud"><span id="gt"></span><span id="gh"></span><button id="ex">Exit</button></div><div id="gmsg"></div>
+<div id="pad"><div><div class="row"><button data-k="f">▲</button></div><div class="row"><button data-k="l">◀</button><button data-k="b">▼</button><button data-k="r">▶</button></div></div><button id="jb" data-k="j">JUMP</button></div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const $=s=>document.querySelector(s),app=$('#app');
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ls={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const DEF_HATS=[
+{id:'r1',name:'Ruko Cap',creator:'Ruko',price:50,type:'dome',color:'#e5484d',h:.4,w:1,brim:1,base:1240},
+{id:'r2',name:'Top Hat',creator:'Ruko',price:120,type:'cylinder',color:'#1b1b22',h:.65,w:1,brim:1,base:860},
+{id:'r3',name:'Wizard Hat',creator:'Ruko',price:200,type:'cone',color:'#6d4aff',h:1,w:1.1,brim:1,base:2130},
+{id:'r4',name:'Golden Halo',creator:'Ruko',price:400,type:'ring',color:'#ffc800',h:.3,w:1,brim:0,base:540},
+{id:'r5',name:'Party Cone',creator:'Ruko',price:30,type:'cone',color:'#ff4b8b',h:.6,w:.7,brim:0,base:980},
+{id:'r6',name:'Crate Head',creator:'Ruko',price:80,type:'box',color:'#a8743a',h:.55,w:1.1,brim:0,base:310}];
+const DEF_GAMES=[
+{id:'g1',name:'Sky Steps',creator:'Ruko',desc:'Jump up the floating obby to the golden platform.',mode:'obby',sky:'#8fd3ff',ground:'#5bd16a',seed:7,size:18},
+{id:'g2',name:'Coin Rush',creator:'Ruko',desc:'Grab every coin in the park.',mode:'coins',sky:'#ffd9a0',ground:'#7bc96f',seed:3,size:20},
+{id:'g3',name:'Ruko Park',creator:'Ruko',desc:'Free roam. Show off your hats.',mode:'roam',sky:'#b7e3ff',ground:'#9fd3a0',seed:11,size:12}];
+const hats=()=>[...DEF_HATS,...SH],games=()=>[...DEF_GAMES,...SG];
+let ME=null,TOKEN=ls.get('ruko_token',null);const key=()=>ME?ME.name.toLowerCase():null,cur=()=>ME,users=()=>ME?{[key()]:ME}:{};
+const saveUser=u=>{if(ME&&u!==ME){ME.av=u.av;ME.worn=u.worn}api('/api/me',{av:u.av||undefined,worn:u.worn||null})};
+const sales=h=>(h.base||0)+(SC[h.id]||0);
+async function hash(s){try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('ruko:'+s));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}catch(e){return btoa(s)}}
+
+/* ---------- 3D helpers ---------- */
+function hatMesh(h){const g=new THREE.Group(),M=new THREE.MeshLambertMaterial({color:h.color}),w=+h.w||1,H=+h.h||.5;
+ const add=(geo,y)=>{const m=new THREE.Mesh(geo,M);m.position.y=y;g.add(m);return m};
+ if(h.type=='cylinder')add(new THREE.CylinderGeometry(.35*w,.35*w,H,20),H/2);
+ if(h.type=='cone')add(new THREE.ConeGeometry(.4*w,H,20),H/2);
+ if(h.type=='dome')add(new THREE.SphereGeometry(.42*w,20,12,0,6.3,0,1.57),0).scale.y=H/.42;
+ if(h.type=='box')add(new THREE.BoxGeometry(.7*w,H,.7*w),H/2);
+ if(h.type=='ring'){const t=add(new THREE.TorusGeometry(.3*w,.05,8,24),.4);t.rotation.x=1.57}
+ if(h.brim&&h.type!='ring')add(new THREE.CylinderGeometry(.6*w,.6*w,.05,24),.02);
+ return g}
+let TR;function thumb(h){const k=JSON.stringify([h.type,h.color,h.h,h.w,h.brim]);if(thumb.c[k])return thumb.c[k];
+ if(!TR){TR=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});TR.setSize(220,220)}
+ const sc=new THREE.Scene();sc.add(new THREE.AmbientLight(0xffffff,.75));const l=new THREE.DirectionalLight(0xffffff,.8);l.position.set(2,3,4);sc.add(l);
+ const m=hatMesh(h);m.rotation.y=-.5;sc.add(m);const c=new THREE.PerspectiveCamera(40,1,.1,50);c.position.set(1.4,1.5,2.8);c.lookAt(0,.4,0);
+ TR.render(sc,c);return thumb.c[k]=TR.domElement.toDataURL()}thumb.c={};
+function makePlayer(hat){const g=new THREE.Group(),L=c=>new THREE.MeshLambertMaterial({color:c});
+ const b=new THREE.Mesh(new THREE.BoxGeometry(.8,1.2,.5),L('#3b82f6'));b.position.y=.6;g.add(b);
+ const h=new THREE.Mesh(new THREE.SphereGeometry(.35,16,12),L('#ffd9a8'));h.position.y=1.55;g.add(h);
+ if(hat){const m=hatMesh(hat);m.position.y=1.85;m.scale.setScalar(.9);g.add(m)}return g}
+
+/* ---------- game engine ---------- */
+const TK={};
+document.querySelectorAll('#pad button').forEach(b=>{const k=b.dataset.k;b.onpointerdown=e=>{e.preventDefault();TK[k]=1};['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,()=>TK[k]=0))});
+function play(g,srv){
+ const me=cur(),hat=hats().find(h=>h.id==me.worn),W=$('#game');W.style.display='block';$('#gt').textContent=g.name+(DEV()=='desktop'?'  ·  WASD move · Space jump · drag to look · wheel zoom':'');$('#gh').textContent='';$('#gmsg').textContent='';
+ const R=new THREE.WebGLRenderer({antialias:true});R.setPixelRatio(Math.min(devicePixelRatio,2));R.setSize(innerWidth,innerHeight);W.prepend(R.domElement);
+ const S=new THREE.Scene();S.background=new THREE.Color(g.sky);S.fog=new THREE.Fog(g.sky,30,90);
+ S.add(new THREE.HemisphereLight(0xffffff,0x555566,.9));const DL=new THREE.DirectionalLight(0xffffff,.6);DL.position.set(5,10,6);S.add(DL);
+ const C=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,.1,200);
+ let s=(+g.seed||1)%2147483646+1;const r=()=>(s=(s*16807)%2147483647)/2147483647;
+ const pl=[],coins=[];
+ const P=(x,y,z,sx,sz,c)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(sx,.5,sz),new THREE.MeshLambertMaterial({color:c}));m.position.set(x,y-.25,z);S.add(m);pl.push({x,y,z,sx,sz})};
+ const n=Math.max(5,Math.min(40,+g.size||16));let last=-1;
+ if(g.mode=='obby'){P(0,0,0,6,6,g.ground);let x=0,y=0,z=0;for(let i=0;i<n;i++){x+=(r()-.5)*6;y+=.3+r()*.9;z-=4.5+r()*1.5;P(x,y,z,3,3,i==n-1?'#ffd23f':`hsl(${i*37%360},70%,60%)`)}last=pl.length-1}
+ else{P(0,0,0,60,60,g.ground);for(let i=0;i<(g.mode=='roam'?12:6);i++)P((r()-.5)*40,.8+r()*2,(r()-.5)*40,3,3,`hsl(${r()*360},60%,60%)`);
+  if(g.mode=='coins')for(let i=0;i<(g.coinN||25);i++){const m=new THREE.Mesh(new THREE.CylinderGeometry(.35,.35,.08,16),new THREE.MeshLambertMaterial({color:'#ffc800'}));m.rotation.x=1.57;m.position.set((r()-.5)*40,.9+r()*1.4,(r()-.5)*40);S.add(m);coins.push(m)}}
+ const pm=makePlayer(hat,me.av);S.add(pm);const sp0={x:0,y:0,z:0},ts=performance.now(),cv=R.domElement;let cy=0,cd=10,dr=0,lx=0;cv.onpointerdown=e=>{dr=1;lx=e.clientX;cv.setPointerCapture(e.pointerId)};cv.onpointerup=cv.onpointercancel=()=>dr=0;cv.onpointermove=e=>{if(dr){cy-=(e.clientX-lx)*.008;lx=e.clientX}};cv.onwheel=e=>{cd=Math.max(5,Math.min(22,cd+e.deltaY*.01))};const rem={};let rr=null,off=null,hb=0;if(srv){setSrv(srv);if(RM)RM.join('srv'+srv).then(r=>{rr=r;off=r.onPeers(c=>{const seen={};c.peers.forEach(q=>{const s=q.presence;if(q.isMe||!s||s.x==null)return;seen[q.peer]=1;let o=rem[q.peer];const k=JSON.stringify([s.hat,s.av]);if(!o||o.k!=k){if(o)S.remove(o.m);const m=makePlayer(hats().find(h=>h.id==s.hat),s.av);S.add(m);o=rem[q.peer]={m,k,t:s}}o.t=s});Object.keys(rem).forEach(i=>{if(!seen[i]){S.remove(rem[i].m);delete rem[i]}})})}).catch(()=>{})}const p={x:0,y:0,z:0,vy:0};let got=0,done=0,raf,t0=performance.now();
+ const keys={},kd=e=>{keys[e.key.toLowerCase()]=1;if(e.key==' ')e.preventDefault()},ku=e=>keys[e.key.toLowerCase()]=0;
+ addEventListener('keydown',kd);addEventListener('keyup',ku);
+ const msg=t=>{$('#gmsg').textContent=t;setTimeout(()=>$('#gmsg').textContent='',2500)};
+ const K=k=>keys[k]||TK[k];
+ const loop=t=>{raf=requestAnimationFrame(loop);const dt=Math.min(.05,(t-t0)/1000);t0=t;
+  const ax=(K('d')||K('arrowright')||K('r')?1:0)-(K('a')||K('arrowleft')||K('l')?1:0),az=(K('s')||K('arrowdown')||K('b')?1:0)-(K('w')||K('arrowup')||K('f')?1:0);
+  const m=Math.hypot(ax,az)||1,sp=g.spd||7,ix=ax/m*sp,iz=az/m*sp,vx=ix*Math.cos(cy)+iz*Math.sin(cy),vz=-ix*Math.sin(cy)+iz*Math.cos(cy);p.x+=vx*dt;p.z+=vz*dt;if(ax||az)pm.rotation.y=Math.atan2(vx,vz);
+  const py=p.y;p.vy-=(g.grav||22)*dt;p.y+=p.vy*dt;let on=0;
+  pl.forEach((q,i)=>{if(p.vy<=0&&py>=q.y-.1&&p.y<=q.y&&Math.abs(p.x-q.x)<=q.sx/2+.3&&Math.abs(p.z-q.z)<=q.sz/2+.3){p.y=q.y;p.vy=0;on=1;if(g.cps&&i&&i%5==0){sp0.x=q.x;sp0.y=q.y;sp0.z=q.z}if(i==last&&!done){done=1;got+=100;msg('You won! +100 Rukos')}}});
+  if(on&&(K(' ')||K('j')))p.vy=g.jmp||9;
+  if(p.y<-15){p.x=sp0.x;p.z=sp0.z;p.y=sp0.y+1;p.vy=0}
+  coins.forEach(c=>{if(!c.visible)return;c.rotation.z+=dt*3;if(Math.hypot(c.position.x-p.x,c.position.y-p.y-1.3,c.position.z-p.z)<1.8){c.visible=false;got+=5}});
+  $('#gh').textContent='⏱ '+((t-ts)/1000|0)+'s   +'+got+' Rukos';
+  const Lb=pm.userData.l,sw=(ax||az)&&on?Math.sin(t*.012)*.9:0;Lb.ll.rotation.x=sw;Lb.rl.rotation.x=-sw;Lb.la.rotation.x=on?-sw:-2.6;Lb.ra.rotation.x=on?sw:-2.6;pm.position.set(p.x,p.y,p.z);C.position.set(p.x+Math.sin(cy)*cd,p.y+cd*.65,p.z+Math.cos(cy)*cd);C.lookAt(p.x,p.y+1.5,p.z);if(rr&&t-hb>100){hb=t;rr.presence({x:+p.x.toFixed(2),y:+p.y.toFixed(2),z:+p.z.toFixed(2),r:+pm.rotation.y.toFixed(2),hat:me.worn||null,av:me.av||null}).catch(()=>{})}Object.values(rem).forEach(o=>{const m=o.m;m.position.x+=(o.t.x-m.position.x)*.3;m.position.y+=(o.t.y-m.position.y)*.3;m.position.z+=(o.t.z-m.position.z)*.3;m.rotation.y=o.t.r});R.render(S,C)};
+ raf=requestAnimationFrame(loop);
+ $('#ex').onclick=()=>{if(off)off();if(rr)rr.leave();setSrv(null);cancelAnimationFrame(raf);removeEventListener('keydown',kd);removeEventListener('keyup',ku);R.dispose();R.domElement.remove();W.style.display='none';
+  if(got)earn(got);render()}}
+
+/* ---------- views ---------- */
+function authView(mode){
+ app.innerHTML=`<div class="card auth"><h1>RUKO</h1><p class="mut">Play, build and dress up in 3D.</p><div class="tabs"><button data-m="in" class="${mode=='in'?'on':''}">Log in</button><button data-m="up" class="${mode=='up'?'on':''}">Sign up</button></div><input id="u" placeholder="Username" autocomplete="username"><input id="p" type="password" placeholder="Password" autocomplete="${mode=='in'?'current-password':'new-password'}"><div id="err" class="err"></div><button class="pri" id="go" style="width:100%">${mode=='in'?'Log in':'Create account'}</button></div>`;
+ app.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>authView(b.dataset.m));
+ $('#go').onclick=async()=>{const n=$('#u').value.trim(),p=$('#p').value,k=n.toLowerCase(),U=users(),E=t=>$('#err').textContent=t;
+  if(mode=='up'){if(!/^\w{3,16}$/.test(n))return E('Username: 3–16 letters, numbers or underscores.');if(k=='ruko')return E('That name is reserved.');if(p.length<4)return E('Password needs 4+ characters.');if(U[k])return E('Username taken.');
+   U[k]={name:n,h:await hash(p),coins:500,owned:['r1'],worn:'r1'};ls.set('ruko_users',U)}
+  else if(!U[k]||U[k].h!==await hash(p))return E('Wrong username or password.');
+  ls.set('ruko_session',k);location.hash='#/';render()}}
+function render(){const me=cur();$('#top').style.display=me?'flex':'none';if(!me)return authView('in');
+ $('#coins').textContent='🪙 '+me.coins;const[a,b]=location.hash.slice(2).split('/');
+ if(a=='catalog')catalog();else if(a=='avatar')avatar();else if(a=='servers')servers();else if(a=='hat')hatPage(b);else if(a=='create')create();else home();scrollTo(0,0)}
+function home(){const me=cur();
+ app.innerHTML=`<h2>Welcome, ${esc(me.name)}</h2><div class="grid">${games().map(g=>`<div class="card"><div class="gcard" style="background:linear-gradient(${esc(g.sky)},${esc(g.ground)})"></div><b>${esc(g.name)}</b><div class="mut" style="font-size:13px;min-height:36px">${esc(g.desc||'')}</div><div class="mut" style="font-size:12px">By ${esc(g.creator)}</div><button class="pri" data-g="${g.id}" style="width:100%;margin-top:8px">Play</button></div>`).join('')}</div>`;
+ app.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>play(games().find(g=>g.id==b.dataset.g)))}
+function catalog(){const me=cur();
+ app.innerHTML=`<h2>Catalog</h2><div class="grid">${hats().map(h=>`<div class="card tile" data-h="${h.id}"><img src="${thumb(h)}" alt=""><b>${esc(h.name)}</b><div class="mut" style="font-size:12px">By ${esc(h.creator)}</div><div>${me.owned.includes(h.id)?'✅ Owned':'🪙 '+h.price}</div></div>`).join('')}</div>`;
+ app.querySelectorAll('[data-h]').forEach(t=>t.onclick=()=>location.hash='#/hat/'+t.dataset.h)}
+function hatPage(id){const me=cur(),h=hats().find(x=>x.id==id);if(!h)return catalog();const own=me.owned.includes(id);
+ app.innerHTML=`<button id="bk">← Catalog</button><div class="hat" style="margin-top:12px"><img src="${thumb(h)}" alt=""><div><h2 style="margin-top:0">${esc(h.name)}</h2><div class="mut">Created by <b style="color:var(--tx)">${esc(h.creator)}</b></div><div class="stat"><div><b>${sales(h).toLocaleString()}</b><span class="mut">sales</span></div><div><b>🪙 ${h.price}</b><span class="mut">price</span></div></div>
+ ${own?`<button class="pri" id="eq" ${me.worn==id?'disabled':''}>${me.worn==id?'Equipped':'Equip'}</button>`:`<button class="pri" id="buy" ${me.coins<h.price?'disabled':''}>${me.coins<h.price?'Not enough Rukos':'Buy for 🪙 '+h.price}</button>`}
+ <p class="mut" style="font-size:13px">Earn Rukos by playing games. Equipped hats show up in every 3D game.</p></div></div>`;
+ $('#bk').onclick=()=>location.hash='#/catalog';
+ if($('#eq'))$('#eq').onclick=()=>{me.worn=id;saveUser(me);render()};
+ if($('#buy'))$('#buy').onclick=()=>{const U=users(),k=key(),u=U[k];if(u.coins<h.price)return;u.coins-=h.price;u.owned.push(id);const c=h.creator.toLowerCase();if(c!=k&&U[c])U[c].coins+=h.price;ls.set('ruko_users',U);const S=ls.get('ruko_sales',{});S[id]=(S[id]||0)+1;ls.set('ruko_sales',S);shareBuy(id);render()}}
+function create(tab='hat'){const me=cur();
+ app.innerHTML=`<h2>Creator Studio</h2><div class="tabs"><button data-t="hat" class="${tab=='hat'?'on':''}">Hat / Accessory</button><button data-t="game" class="${tab=='game'?'on':''}">Game</button></div>
+ ${tab=='hat'?`<div class="hat"><div class="card"><img id="pv" alt=""></div><div class="card">
+ <label>Name</label><input id="hn" maxlength="20" value="My Hat"><label>Shape</label><select id="ht"><option>cylinder</option><option>cone</option><option>dome</option><option>box</option><option>ring</option></select>
+ <label>Color</label><input id="hc" type="color" value="#5b4bff"><label>Height</label><input id="hh" type="range" min=".2" max="1.4" step=".05" value=".6"><label>Width</label><input id="hw" type="range" min=".5" max="1.6" step=".05" value="1">
+ <label><input id="hb" type="checkbox"> Brim</label><br><label>Price (Rukos)</label><input id="hp" type="number" min="0" max="1000" value="100"><div id="err" class="err"></div><button class="pri" id="pub" style="width:100%">Publish hat</button></div></div>`
+ :`<div class="card" style="max-width:480px"><label>Name</label><input id="cn" maxlength="24" value="My Game"><label>Description</label><input id="cd" maxlength="80" value="A game I made."><label>Type</label><select id="cm"><option value="obby">Obby (climb to the top)</option><option value="coins">Coin collector</option><option value="roam">Free roam</option></select>
+ <label>Sky color</label><input id="cs" type="color" value="#8fd3ff"><label>Ground color</label><input id="cg" type="color" value="#5bd16a"><label>Size (5–40 platforms)</label><input id="cz" type="number" min="5" max="40" value="16"><label>Level seed</label><input id="cx" type="number" value="${Math.floor(Math.random()*999)}">
+ <div id="err" class="err"></div><div style="display:flex;gap:8px"><button id="tst" style="flex:1">Test play</button><button class="pri" id="pub" style="flex:1">Publish game</button></div></div>`}`;
+ app.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>create(b.dataset.t));
+ if(tab=='hat'){const spec=()=>({id:'h'+Date.now(),name:$('#hn').value.trim()||'Untitled',creator:me.name,price:Math.max(0,Math.min(1000,+$('#hp').value||0)),type:$('#ht').value,color:$('#hc').value,h:+$('#hh').value,w:+$('#hw').value,brim:$('#hb').checked?1:0,base:0});
+  const pv=()=>$('#pv').src=thumb(spec());app.querySelectorAll('.card input,.card select').forEach(i=>i.oninput=pv);pv();
+  $('#pub').onclick=()=>{const h=spec();ls.set('ruko_hats',[...ls.get('ruko_hats',[]),h]);location.hash='#/hat/'+h.id}}
+ else{const spec=()=>({id:'c'+Date.now(),name:$('#cn').value.trim()||'Untitled',desc:$('#cd').value.trim(),creator:me.name,mode:$('#cm').value,sky:$('#cs').value,ground:$('#cg').value,size:+$('#cz').value,seed:+$('#cx').value||1});
+  $('#tst').onclick=()=>play(spec());$('#pub').onclick=()=>{ls.set('ruko_games',[...ls.get('ruko_games',[]),spec()]);location.hash='#/'}}}
+
+/* ---------- v2: Roblox-style avatar, avatar editor, advanced studio, device detection ---------- */
+const DEV=()=>document.documentElement.dataset.dev;
+function detect(){document.documentElement.dataset.dev=((matchMedia('(pointer:coarse)').matches&&matchMedia('(hover:none)').matches)||/Android|iPhone|iPod|Mobile/i.test(navigator.userAgent)||innerWidth<700)?'mobile':'desktop'}
+detect();addEventListener('resize',detect);
+const GEO={cylinder:()=>new THREE.CylinderGeometry(.5,.5,1,20),cone:()=>new THREE.ConeGeometry(.5,1,20),dome:()=>new THREE.SphereGeometry(.5,20,12,0,6.3,0,1.5708),sphere:()=>new THREE.SphereGeometry(.5,20,14),box:()=>new THREE.BoxGeometry(1,1,1),torus:()=>new THREE.TorusGeometry(.4,.1,8,24).rotateX(1.5708)};
+function parts(h){if(h.parts)return h.parts;const w=+h.w||1,H=+h.h||.5,c=h.color,P=(t,sx,sy,sz,y)=>({t,c,f:'matte',sx,sy,sz,x:0,y,z:0,r:0,q:0}),o=[];
+ if(h.type=='cylinder')o.push(P('cylinder',.7*w,H,.7*w,H/2));if(h.type=='cone')o.push(P('cone',.8*w,H,.8*w,H/2));if(h.type=='dome')o.push(P('dome',.84*w,2*H,.84*w,0));if(h.type=='box')o.push(P('box',.7*w,H,.7*w,H/2));if(h.type=='ring')o.push(P('torus',.75*w,1,.75*w,.4));
+ if(h.brim&&h.type!='ring')o.push(P('cylinder',1.2*w,.05,1.2*w,.02));return o}
+function hatMesh(h){const g=new THREE.Group();parts(h).forEach(p=>{const mat=p.f=='neon'?new THREE.MeshBasicMaterial({color:p.c}):p.f=='shiny'?new THREE.MeshPhongMaterial({color:p.c,shininess:110,specular:0x888888}):new THREE.MeshLambertMaterial({color:p.c}),m=new THREE.Mesh(GEO[p.t](),mat);m.scale.set(p.sx,p.sy,p.sz);m.position.set(p.x||0,p.y||0,p.z||0);m.rotation.z=(p.r||0)*.01745;m.rotation.x=(p.q||0)*.01745;g.add(m)});return g}
+function shot(obj,cp,look){if(!TR){TR=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});TR.setSize(300,300)}
+ const sc=new THREE.Scene();sc.add(new THREE.AmbientLight(0xffffff,.75));const l=new THREE.DirectionalLight(0xffffff,.8);l.position.set(2,3,4);sc.add(l);sc.add(obj);
+ const c=new THREE.PerspectiveCamera(40,1,.1,50);c.position.set(...cp);c.lookAt(...look);TR.render(sc,c);return TR.domElement.toDataURL()}
+function thumb(h){const k=JSON.stringify(parts(h));if(thumb.c[k])return thumb.c[k];const m=hatMesh(h);m.rotation.y=-.5;return thumb.c[k]=shot(m,[1.4,1.5,2.8],[0,.5,0])}
+function faceTex(c,f){const k=document.createElement('canvas');k.width=k.height=64;const x=k.getContext('2d');x.fillStyle=c;x.fillRect(0,0,64,64);x.fillStyle=x.strokeStyle='#222';x.lineWidth=4;x.lineCap='round';
+ if(f==2){x.beginPath();x.arc(22,26,4,0,7);x.fill();x.beginPath();x.arc(42,26,4,0,7);x.fill();x.beginPath();x.arc(32,46,6,0,7);x.fill()}
+ else if(f==3){x.fillRect(16,24,14,4);x.fillRect(34,24,14,4);x.beginPath();x.moveTo(22,48);x.lineTo(42,48);x.stroke()}
+ else{if(f==1)x.fillRect(12,22,40,9);else{x.beginPath();x.arc(22,26,4,0,7);x.fill();x.beginPath();x.arc(42,26,4,0,7);x.fill()}x.beginPath();x.arc(32,36,14,.25,2.9);x.stroke()}
+ return new THREE.CanvasTexture(k)}
+function makePlayer(hat,av){av=Object.assign({skin:'#f5cd30',shirt:'#2f6fed',pants:'#4a9c3a',face:0},av);const g=new THREE.Group(),Lm=c=>new THREE.MeshLambertMaterial({color:c}),sk=Lm(av.skin);
+ const bx=(w,h,d,m,y)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.y=y;return o};
+ g.add(bx(1.2,1.2,.6,Lm(av.shirt),1.8));g.add(bx(.7,.7,.7,[sk,sk,sk,sk,new THREE.MeshLambertMaterial({map:faceTex(av.skin,av.face)}),sk],2.75));
+ const limb=(x,m,top)=>{const p=new THREE.Group();p.position.set(x,top,0);p.add(bx(.55,1.2,.55,m,-.6));g.add(p);return p},pm=Lm(av.pants);
+ g.userData.l={la:limb(-.88,sk,2.4),ra:limb(.88,sk,2.4),ll:limb(-.3,pm,1.2),rl:limb(.3,pm,1.2)};
+ if(hat){const m=hatMesh(hat);m.position.y=3.1;g.add(m)}return g}
+function avatar(){const me=cur(),av=Object.assign({skin:'#f5cd30',shirt:'#2f6fed',pants:'#4a9c3a',face:0},me.av);let rot=.4;
+ const sk=['#f5cd30','#ffd9a8','#e0ac69','#c68642','#8d5524','#5b3a1e','#a5d6ff','#b6ff9f'],own=me.owned.map(i=>hats().find(h=>h.id==i)).filter(Boolean);
+ app.innerHTML=`<h2>Avatar</h2><div class="hat"><div class="card"><img id="pv" alt=""><input id="rt" type="range" min="-3.14" max="3.14" step=".05" value=".4"></div><div class="card"><label>Skin tone</label><div class="chips">${sk.map(c=>`<button data-sk="${c}" style="background:${c};width:36px;height:36px"></button>`).join('')}</div><label>Skin color</label><input id="as" type="color" value="${av.skin}"><label>Shirt</label><input id="ah" type="color" value="${av.shirt}"><label>Pants</label><input id="ap" type="color" value="${av.pants}"><label>Face</label><select id="af">${['Smile','Cool','Surprised','Stoic'].map((n,i)=>`<option value="${i}" ${i==av.face?'selected':''}>${n}</option>`).join('')}</select><label>Hat</label><div class="chips"><button data-w="">None</button>${own.map(h=>`<button data-w="${h.id}" style="width:64px;padding:2px"><img src="${thumb(h)}" style="width:100%" alt="${esc(h.name)}"></button>`).join('')}</div></div></div>`;
+ const draw=()=>{const h=hats().find(x=>x.id==me.worn),m=makePlayer(h,av);m.rotation.y=rot;$('#pv').src=shot(m,[0,2.4,7],[0,1.6,0])},sv=()=>{me.av={...av};saveUser(me);draw()};
+ $('#rt').oninput=e=>{rot=+e.target.value;draw()};
+ app.querySelectorAll('[data-sk]').forEach(b=>b.onclick=()=>{av.skin=b.dataset.sk;$('#as').value=av.skin;sv()});
+ $('#as').oninput=e=>{av.skin=e.target.value;sv()};$('#ah').oninput=e=>{av.shirt=e.target.value;sv()};$('#ap').oninput=e=>{av.pants=e.target.value;sv()};$('#af').onchange=e=>{av.face=+e.target.value;sv()};
+ app.querySelectorAll('[data-w]').forEach(b=>b.onclick=()=>{me.worn=b.dataset.w||null;saveUser(me);draw()});draw()}
+function create(tab='hat'){const me=cur();
+ app.innerHTML=`<h2>Creator Studio</h2><div class="tabs"><button data-t="hat" class="${tab=='hat'?'on':''}">Hat / Accessory</button><button data-t="game" class="${tab=='game'?'on':''}">Game</button></div><div id="ed"></div>`;
+ app.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>create(b.dataset.t));tab=='hat'?hatEd(me):gameEd(me)}
+const FD=[['sx','Width',.1,2.5,.05],['sy','Height',.05,2.5,.05],['sz','Depth',.1,2.5,.05],['x','Move X',-.9,.9,.05],['y','Move Y',-.3,1.8,.05],['z','Move Z',-.9,.9,.05],['r','Tilt side',-90,90,5],['q','Tilt front',-90,90,5]];
+let HE=null;
+function hatEd(me){HE=HE||{name:'My Hat',price:100,parts:[{t:'cylinder',c:'#5b4bff',f:'matte',sx:.7,sy:.6,sz:.7,x:0,y:.3,z:0,r:0,q:0}],sel:0,rot:-.5};const E=$('#ed');
+ const draw=()=>{const p=HE.parts[HE.sel];
+ E.innerHTML=`<div class="hat"><div class="card"><img id="pv" alt=""><input id="rt" type="range" min="-3.14" max="3.14" step=".05" value="${HE.rot}"><div class="chips">${HE.parts.map((q,i)=>`<button data-s="${i}" class="${i==HE.sel?'on':''}">${i+1}. ${q.t}</button>`).join('')}</div><div class="chips"><button id="ap">+ Add</button><button id="dp">Duplicate</button><button id="mp">Mirror</button><button id="xp">Delete</button></div><label>Remix a hat</label><select id="rx"><option value="">Choose…</option>${hats().map(h=>`<option value="${h.id}">${esc(h.name)}</option>`).join('')}</select></div>
+ <div class="card"><label>Shape</label><select id="pt">${Object.keys(GEO).map(k=>`<option ${k==p.t?'selected':''}>${k}</option>`).join('')}</select><label>Color</label><input id="pc" type="color" value="${p.c}"><label>Finish</label><select id="pf">${['matte','shiny','neon'].map(k=>`<option ${k==p.f?'selected':''}>${k}</option>`).join('')}</select>${FD.map(([k,n,a,b,s])=>`<label>${n}</label><input data-k="${k}" type="range" min="${a}" max="${b}" step="${s}" value="${p[k]}">`).join('')}</div></div>
+ <div class="card" style="margin-top:12px"><label>Hat name</label><input id="hn" maxlength="20" value="${esc(HE.name)}"><label>Price (Rukos)</label><input id="hp" type="number" min="0" max="1000" value="${HE.price}"><button class="pri" id="pub" style="width:100%">Publish hat</button></div>`;
+ const pv=()=>{const m=hatMesh({parts:HE.parts});m.rotation.y=HE.rot;$('#pv').src=shot(m,[1.4,1.5,2.8],[0,.5,0])};pv();
+ $('#rt').oninput=e=>{HE.rot=+e.target.value;pv()};
+ E.querySelectorAll('[data-k]').forEach(i=>i.oninput=()=>{p[i.dataset.k]=+i.value;pv()});
+ $('#pt').onchange=e=>{p.t=e.target.value;pv()};$('#pc').oninput=e=>{p.c=e.target.value;pv()};$('#pf').onchange=e=>{p.f=e.target.value;pv()};
+ $('#hn').oninput=e=>HE.name=e.target.value;$('#hp').oninput=e=>HE.price=+e.target.value;
+ E.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{HE.sel=+b.dataset.s;draw()});
+ const add=o=>{if(HE.parts.length>=12)return;HE.parts.push(o);HE.sel=HE.parts.length-1;draw()};
+ $('#ap').onclick=()=>add({t:'sphere',c:'#ff4b8b',f:'matte',sx:.3,sy:.3,sz:.3,x:0,y:.7,z:0,r:0,q:0});$('#dp').onclick=()=>add({...p});$('#mp').onclick=()=>add({...p,x:-p.x,r:-p.r});
+ $('#xp').onclick=()=>{if(HE.parts.length>1){HE.parts.splice(HE.sel,1);HE.sel=0;draw()}};
+ $('#rx').onchange=e=>{const h=hats().find(x=>x.id==e.target.value);if(h){HE.parts=JSON.parse(JSON.stringify(parts(h)));HE.name=h.name+' Remix';HE.sel=0;draw()}};
+ $('#pub').onclick=()=>{const h={id:'h'+Date.now(),name:HE.name.trim()||'Untitled',creator:me.name,price:Math.max(0,Math.min(1000,HE.price||0)),parts:HE.parts,base:0};pub('hats',h);HE=null;location.hash='#/hat/'+h.id}};draw()}
+function gameEd(me){const F=(id,l,t,v,x='')=>`<label>${l}</label><input id="${id}" type="${t}" value="${v}" ${x}>`;
+ $('#ed').innerHTML=`<div class="card" style="max-width:520px">${F('cn','Name','text','My Game','maxlength=24')}${F('cd','Description','text','A game I made.','maxlength=80')}<label>Type</label><select id="cm"><option value="obby">Obby (climb to the top)</option><option value="coins">Coin collector</option><option value="roam">Free roam</option></select>${F('cs','Sky','color','#8fd3ff')}${F('cg','Ground','color','#5bd16a')}${F('cz','Platforms (5–40)','number',16)}${F('cx','Level seed','number',Math.floor(Math.random()*999))}${F('sp','Walk speed (4–14)','number',7)}${F('jp','Jump power (6–16)','number',9)}${F('gr','Gravity (10–40)','number',22)}${F('cn2','Coins, coin type (5–60)','number',25)}<label><input id="cp" type="checkbox" checked> Checkpoints every 5 platforms</label><div style="display:flex;gap:8px;margin-top:10px"><button id="tst" style="flex:1">Test play</button><button class="pri" id="pub" style="flex:1">Publish</button></div></div>`;
+ const cl=(v,a,b,d)=>Math.max(a,Math.min(b,+v||d)),spec=()=>({id:'c'+Date.now(),name:$('#cn').value.trim()||'Untitled',desc:$('#cd').value.trim(),creator:me.name,mode:$('#cm').value,sky:$('#cs').value,ground:$('#cg').value,size:cl($('#cz').value,5,40,16),seed:+$('#cx').value||1,spd:cl($('#sp').value,4,14,7),jmp:cl($('#jp').value,6,16,9),grav:cl($('#gr').value,10,40,22),coinN:cl($('#cn2').value,5,60,25),cps:$('#cp').checked});
+ $('#tst').onclick=()=>play(spec());$('#pub').onclick=()=>{pub('games',spec());location.hash='#/'}}
+/* ---------- online backend (talks to server.js) ---------- */
+let DB=1,SH=[],SG=[],SC={},PL=[];
+async function api(p,b){try{const r=await fetch(p,{method:b?'POST':'GET',headers:{'content-type':'application/json',...(TOKEN?{authorization:'Bearer '+TOKEN}:{})},body:b?JSON.stringify(b):undefined});return await r.json()}catch(e){return null}}
+const toast=t=>{const d=document.createElement('div');d.textContent=t;d.style.cssText='position:fixed;left:12px;right:12px;bottom:90px;z-index:99;background:#e5484d;color:#fff;padding:12px;border-radius:12px;text-align:center';document.body.append(d);setTimeout(()=>d.remove(),6000)};
+const inGame=()=>{const g=$('#game').style.display;return g&&g!='none'};
+const softRender=()=>{const a=location.hash.slice(2).split('/')[0];if(!inGame()&&['','catalog','hat','servers'].includes(a))render()};
+async function loadAll(){const[h,g]=await Promise.all([api('/api/hats'),api('/api/games')]);if(h){SH=h.hats;SC=h.sales}if(g)SG=g.games}
+async function boot(){if(TOKEN){const r=await api('/api/me');if(r&&r.me)ME=r.me;else{TOKEN=null;ls.set('ruko_token',null)}}await loadAll();render();setInterval(poll,6000)}
+async function poll(){if(!ME||inGame())return;await loadAll();const r=await api('/api/me');if(r&&r.me)ME=r.me;if(location.hash.includes('servers')){const s=await api('/api/servers');if(s)PL=s.players.map(p=>({...p,at:Date.now()}))}softRender()}
+function pub(col,item){const L=col=='hats'?SH:SG;L.push(item);api('/api/'+col,item).then(r=>{if(!r||r.error){L.splice(L.indexOf(item),1);toast((r&&r.error)||'Could not publish. Check your connection.');softRender()}else if(r.id)item.id=r.id})}
+function shareBuy(id){api('/api/buy',{id}).then(async r=>{if(r&&r.me)ME=r.me;else{toast((r&&r.error)||'Purchase failed.');const x=await api('/api/me');if(x&&x.me)ME=x.me}await loadAll();render()})}
+function earn(n){ME.coins+=n;api('/api/earn',{n}).then(r=>{if(r&&r.me)ME=r.me})}
+function setSrv(){}
+const RM={join:id=>new Promise((ok,no)=>{const base='/api/room/'+encodeURIComponent(id),es=new EventSource(base+'/stream?token='+TOKEN);let me=null,fns=[],live=0;
+ es.onmessage=e=>{const d=JSON.parse(e.data);
+  if(d.hello){me=d.hello;if(!live){live=1;ok({presence:async p=>{if(me)fetch(base+'/pos',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+TOKEN},body:JSON.stringify({peer:me,presence:p})}).catch(()=>{})},onPeers:f=>{fns.push(f);return()=>{fns=fns.filter(x=>x!=f)}},leave:()=>es.close()})}}
+  if(d.peers)fns.forEach(f=>f({peers:d.peers.map(p=>({...p,isMe:p.peer==me}))}))};
+ es.onerror=()=>{if(!live){es.close();no(new Error('full'))}}})};
+function authView(mode){
+ app.innerHTML=`<div class="card auth"><h1>RUKO</h1><p class="mut">Play, build and dress up in 3D.</p><div class="tabs"><button data-m="in" class="${mode=='in'?'on':''}">Log in</button><button data-m="up" class="${mode=='up'?'on':''}">Sign up</button></div><input id="u" placeholder="Username" autocomplete="username"><input id="p" type="password" placeholder="Password (6+ characters)" autocomplete="${mode=='in'?'current-password':'new-password'}"><div id="err" class="err"></div><button class="pri" id="go" style="width:100%">${mode=='in'?'Log in':'Create account'}</button></div>`;
+ app.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>authView(b.dataset.m));
+ $('#go').onclick=async()=>{const E=t=>$('#err').textContent=t,r=await api('/api/'+(mode=='in'?'login':'signup'),{name:$('#u').value.trim(),pass:$('#p').value});
+  if(!r||r.error)return E(r?r.error:'Cannot reach the server.');
+  TOKEN=r.token;ls.set('ruko_token',TOKEN);ME=r.me;await loadAll();location.hash='#/';render()}}
+function servers(){const act=PL.filter(p=>p.at>Date.now()-60000),ok=DB&&RM;
+ app.innerHTML=`<h2>Servers</h2>${ok?'<p class="mut">Join a server to play with other people live. Up to 10 players each.</p>':'<p class="mut">Could not reach the server. Reload the page.</p>'}${games().map(g=>`<h3>${esc(g.name)}</h3><div class='grid'>${[1,2,3].map(n=>{const id=g.id+'x'+n,ps=act.filter(p=>p.server==id);return `<div class='card'><b>Server ${n}</b><div class='mut' style='font-size:13px'>${ps.length}/10 players</div><div class='mut' style='font-size:12px;min-height:32px'>${ps.map(p=>esc(p.name)).join(', ')||'Empty'}</div><button class='pri' data-j='${id}' data-g='${g.id}' style='width:100%' ${ok&&ps.length<10?'':'disabled'}>${ps.length>=10?'Full':'Join'}</button></div>`}).join('')}</div>`).join('')}`;
+ app.querySelectorAll('[data-j]').forEach(b=>b.onclick=()=>play(games().find(g=>g.id==b.dataset.g),b.dataset.j))}
+/* ---------- boot ---------- */
+document.querySelectorAll('#top nav button').forEach(b=>b.onclick=()=>{location.hash='#/'+b.dataset.r});
+$('#out').onclick=()=>{ls.set('ruko_token',null);TOKEN=null;ME=null;render()};
+addEventListener('hashchange',render);boot();
+</script></body></html>
